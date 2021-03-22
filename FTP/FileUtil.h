@@ -17,9 +17,14 @@ struct FTokenInfo
 
 struct FFTPSyncFileInfo
 {
+	string filename;
 	string fullpath;
 	string remotepath;
 	size_t filesize;
+	size_t uploadid;
+
+	FFTPSyncFileInfo();
+	FFTPSyncFileInfo(const FFTPSyncFileInfo& InInfo);
 };
 
 struct FFTPInfo
@@ -34,4 +39,5 @@ struct FFTPInfo
 
 	FFTPInfo();
 	FFTPInfo(const string & InIP, unsigned int InPort, const string & InName, const string & InPWD, const string& InPath, const string& InRemoteDir, bool InOverWrite);
+	FFTPInfo(const FFTPInfo& InInfo);
 };

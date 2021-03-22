@@ -68,3 +68,32 @@ FFTPInfo::FFTPInfo(const string & InIP, unsigned int InPort, const string & InNa
 	, bOverwriteFile(InOverWrite)
 {
 }
+
+FFTPInfo::FFTPInfo(const FFTPInfo & InInfo)
+	:ip(InInfo.ip)
+	, port(InInfo.port)
+	, username(InInfo.username)
+	, password(InInfo.password)
+	, clientRootPath(InInfo.clientRootPath)
+	, remoteDir(InInfo.remoteDir)
+	, bOverwriteFile(InInfo.bOverwriteFile)
+{
+}
+
+FFTPSyncFileInfo::FFTPSyncFileInfo()
+	:filename("default.txt")
+	, fullpath("C:\\SyncFTPDir")
+	, remotepath("/SyncFTP")
+	, filesize(0)
+	, uploadid(0)
+{
+}
+
+FFTPSyncFileInfo::FFTPSyncFileInfo(const FFTPSyncFileInfo & InInfo)
+	:filename(InInfo.filename)
+	,fullpath(InInfo.fullpath)
+	,remotepath(InInfo.remotepath)
+	,filesize(InInfo.filesize)
+	, uploadid(InInfo.uploadid)
+{
+}

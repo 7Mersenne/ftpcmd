@@ -25,7 +25,7 @@ public:
 	* async usage example: 
 	```
 	CFileUploaderRunnable uploader_obj(ftpInfo, syncFileInfo);
-	future<bool> _future = async(std::bind(&CFileUploaderRunnable::Run, uploader_obj));
+	future<uint32_t> _future = async(std::bind(&CFileUploaderRunnable::Run, uploader_obj));
 	```
 	* return if the upload task is success. 0 means success,  >0 means error code
 	*	error code:

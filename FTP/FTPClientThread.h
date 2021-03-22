@@ -6,6 +6,8 @@
 #include <future>
 #include <chrono>
 #include <string>
+#include <vector>
+#include <map>
 #include "FileUtil.h"
 using namespace std;
 
@@ -33,4 +35,9 @@ private:
 	thread* ptr_thread;
 	FFTPInfo ftpInfo;
 	bool bOverwriteFile;
+
+
+	map<string, size_t> m_SyncFileMap;	// map fullpath to the index of m_ftpSyncList
+	vector< FFTPSyncFileInfo > m_ftpSyncList; 
+	vector< future<uint32_t> > m_taskStateFutureList;
 };
