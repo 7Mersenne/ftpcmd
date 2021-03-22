@@ -93,9 +93,4 @@
       <Filter>FTP</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\FTP\README.md">
-      <Filter>FTP</Filter>
-    </None>
-  </ItemGroup>
 </Project>

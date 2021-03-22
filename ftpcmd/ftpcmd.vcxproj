@@ -153,9 +153,6 @@
     <ClInclude Include="..\FTP\FTPClient.h" />
     <ClInclude Include="..\FTP\FTPClientThread.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\FTP\README.md" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
