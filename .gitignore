@@ -1,3 +1,11 @@
+# VS
+.vs/
+ftpcmd/x64/
+ftpcmd/Debug/
+x64/
+FTP/README.md
+!bin.zip
+
 # Prerequisites
 *.d
 
