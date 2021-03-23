@@ -70,10 +70,14 @@ void ftp_testcase_1(CFTPClient &FTPClient)
 
 FTPClientThread*  ftp_testcase_2()
 {
-	FTPClientThread * ct = new FTPClientThread(DEFAULT_IP, 21, DEFAULT_NAME, DEFAULT_PWD, "D:\\FTPSyncDir", "/", true);
+	FTPClientThread * ct = new FTPClientThread(DEFAULT_IP, 21, DEFAULT_NAME, DEFAULT_PWD, "D:\\FTPSyncDir", "/Sync", true);
 	//FTPClientThread * ct = new FTPClientThread(DEFAULT_IP, 21, DEFAULT_NAME, DEFAULT_PWD, "D:\\专利和著作权", "/", true);
 
-	ct->Start();
+	auto _future = ct->Start();// future must return to a value, or the thread will be block here.
+
+	this_thread::sleep_for(chrono::seconds(1));
+	//cout << "main thread on press sync button" << endl;
+	ct->OnPressSyncButton();
 
 	return ct;
 }
@@ -83,9 +87,9 @@ int main()
 	cout << "FTP cmd in Windows" << endl;
 
 	CFTPClient FTPClient([](const string& logMsg) {cout << logMsg << endl; });
-	ftp_testcase_1(FTPClient);
+	//ftp_testcase_1(FTPClient);
 
-	//FTPClientThread* ct = ftp_testcase_2();
+	FTPClientThread* ct = ftp_testcase_2();
 
 
 	system("pause");

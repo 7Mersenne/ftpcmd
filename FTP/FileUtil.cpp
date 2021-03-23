@@ -86,6 +86,7 @@ FFTPSyncFileInfo::FFTPSyncFileInfo()
 	, remotepath("/SyncFTP")
 	, filesize(0)
 	, uploadid(0)
+	, stat(0)
 {
 }
 
@@ -95,5 +96,6 @@ FFTPSyncFileInfo::FFTPSyncFileInfo(const FFTPSyncFileInfo & InInfo)
 	,remotepath(InInfo.remotepath)
 	,filesize(InInfo.filesize)
 	, uploadid(InInfo.uploadid)
+	, stat(0)
 {
 }

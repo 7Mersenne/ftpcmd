@@ -30,6 +30,7 @@ private:
 	bool RunThread();
 	void Run();
 	void Dir(const string& InPath, bool bLog = true);
+	void InitLocalFileInfo(const string& InPath, const string& InRemotePath);
 
 	atomic_bool bRun;
 	thread* ptr_thread;
@@ -37,7 +38,11 @@ private:
 	bool bOverwriteFile;
 
 
-	map<string, size_t> m_SyncFileMap;	// map fullpath to the index of m_ftpSyncList
-	vector< FFTPSyncFileInfo > m_ftpSyncList; 
+
+	std::mutex m_mutexFileCards;
+	map<string, size_t> m_syncFileMap;	// map fullpath to the index of m_ftpSyncList
+	vector< FFTPSyncFileInfo > m_ftpSyncList;
 	vector< future<uint32_t> > m_taskStateFutureList;
+
+	static bool bFTPThreadLog;
 };

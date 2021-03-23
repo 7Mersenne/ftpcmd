@@ -22,6 +22,7 @@ struct FFTPSyncFileInfo
 	string remotepath;
 	size_t filesize;
 	size_t uploadid;
+	int32_t stat;// 0=ready; 1=upload, 2=success, 3=failed
 
 	FFTPSyncFileInfo();
 	FFTPSyncFileInfo(const FFTPSyncFileInfo& InInfo);
