@@ -11,6 +11,8 @@ FTPClientThread::FTPClientThread()
 	ptr_thread = nullptr;
 	bRun = false;
 	bPressSync = false;
+	m_MaxUploaderCnt = 4;
+	concurrentCount = 0;
 }
 
 FTPClientThread::FTPClientThread(const string & InIP, unsigned int InPort, const string & InName, const string & InPWD, const string& InPath, const string& InRemoteDir, bool InOverWrite)
@@ -19,6 +21,8 @@ FTPClientThread::FTPClientThread(const string & InIP, unsigned int InPort, const
 	ptr_thread = nullptr;
 	bRun = false;
 	bPressSync = false;
+	m_MaxUploaderCnt = 4;
+	concurrentCount = 0;
 }
 
 FTPClientThread::~FTPClientThread()
@@ -28,14 +32,133 @@ FTPClientThread::~FTPClientThread()
 		//delete ptr_thread;
 		//ptr_thread = nullptr;
 	}
+
+	for (auto itr = uploaderThreads.begin(); itr != uploaderThreads.end(); itr++)
+	{
+		delete *itr;
+		*itr = nullptr;
+	}
+
+	for (auto elem: uploaderThreads)
+	{
+		elem->bRun = false;
+	}
 }
 
 future<bool> FTPClientThread::Start()
 {
+	uploaderThreads.clear();
+	for (auto i = 0; i < m_MaxUploaderCnt; ++i)
+	{
+		uploaderThreads.push_back(new CFileUploaderRunnable());
+	}
 	return async(std::bind(&FTPClientThread::RunThread, this));
 }
 
 void FTPClientThread::Run()
+{
+	CFTPClient FTPClient([](const string& logMsg) {cout << logMsg << endl; });
+	bool bSuccessInit = FTPClient.InitSession(ftpInfo.ip, ftpInfo.port, ftpInfo.username, ftpInfo.password);
+	string strList;
+
+	if (!bSuccessInit)
+	{
+		// error
+		cout << "login ftp failed, error username or password" << endl;
+		return;
+	}
+
+	cout << "client thread start..." << endl;
+
+	while (bRun)
+	{
+		{
+			if (FTPClientThread::bFTPThreadLog)
+				cout << "check local file list: " << endl;
+			std::lock_guard<std::mutex> lock(m_mutexFileCards);
+			// init cards
+			InitLocalFileInfo(ftpInfo.clientRootPath, ftpInfo.remoteDir);
+		}
+
+		while (bPressSync) {
+			cout << "on press sync button" << endl;
+			bPressSync = false;
+
+			{
+				cout << "upload all" << endl;
+				for (auto elem : m_ftpSyncList)
+				{
+					string _remote_path = elem.remotepath;
+					if (0 == elem.stat || 2==elem.stat) {
+						CFTPClient::FileInfo _remoteFInfo;
+
+						if (bOverwriteFile) {
+							if (FTPClient.Info(_remote_path, _remoteFInfo))
+							{
+								if ((size_t)_remoteFInfo.dFileSize == elem.filesize) continue;
+							}
+						}
+						else {
+							bool bSynced = false;
+							int i = 1;
+							while (FTPClient.Info(_remote_path, _remoteFInfo))
+							{
+								if ((size_t)_remoteFInfo.dFileSize == elem.filesize)
+								{
+									bSynced = true;
+									break;
+								}
+								else {
+									_remote_path = elem.remotepath + ".copy" + to_string(i);
+								}
+							}
+
+							if (bSynced) continue;
+						}
+					}
+
+					elem.stat = 1;
+
+					FFTPSyncFileInfo tmpSyncFileInfo = elem;
+					tmpSyncFileInfo.remotepath = _remote_path;
+
+					future<int32_t> _future = async([](const FFTPInfo& info, const FFTPSyncFileInfo& e)
+					{
+						CFTPClient _FTPClient([](const string& logMsg) {cout << logMsg << endl; });
+						_FTPClient.InitSession(info.ip, info.port, info.username, info.password);
+						if (FTPClientThread::bFTPThreadLog)
+						{
+							cout << "upload begin:" << e.fullpath << " to " << e.remotepath <<"\n" << endl;
+						}
+						bool bSuccess = _FTPClient.UploadFile(e.fullpath, e.remotepath, true);
+						if (FTPClientThread::bFTPThreadLog)
+						{
+							cout << "upload end:" << e.fullpath << " to " << e.remotepath << "\n" << endl;
+						}
+						_FTPClient.CleanupSession();
+
+						if (bSuccess)
+							return 2;
+						return 3;
+					}, ftpInfo, tmpSyncFileInfo);
+
+					_future.wait();
+
+					elem.stat = _future.get();
+					this_thread::sleep_for(chrono::milliseconds(1));
+				}
+			}
+		}
+
+		this_thread::sleep_for(chrono::seconds(DEFAULT_SLEEP_SECOND));
+	}
+
+	FTPClient.CleanupSession();
+
+	return;
+}
+
+void FTPClientThread::RunWithAsyncLambda()
 {
 	CFTPClient FTPClient([](const string& logMsg) {cout << logMsg << endl; });
 	bool bSuccessInit = FTPClient.InitSession(ftpInfo.ip, ftpInfo.port, ftpInfo.username, ftpInfo.password);
@@ -51,7 +174,14 @@ void FTPClientThread::Run()
 
 	while (bRun)
 	{
-		cout << "running" << endl;
+		{
+			if (FTPClientThread::bFTPThreadLog)
+				cout << "check local file list: " << endl;
+			std::lock_guard<std::mutex> lock(m_mutexFileCards);
+			// init cards
+			InitLocalFileInfo(ftpInfo.clientRootPath, ftpInfo.remoteDir);
+		}
+
 		while (bPressSync) {
 			cout << "on press sync button" << endl;
 			bPressSync = false;
@@ -87,24 +217,33 @@ void FTPClientThread::Run()
 			//Dir(ftpInfo.clientRootPath);
 
 			{
-				if (FTPClientThread::bFTPThreadLog)
-					cout << "local file list: " << endl;
-				const std::lock_guard<std::mutex> lock(m_mutexFileCards);
-				// init cards
-				InitLocalFileInfo(ftpInfo.clientRootPath, ftpInfo.remoteDir);
-			}
-
-			{
+				cout << "upload all" << endl;
 				for (auto elem : m_ftpSyncList)
 				{
-					FTPClient.UploadFile(elem.fullpath, elem.remotepath, true);
+					async([](FFTPInfo info, FFTPSyncFileInfo e)
+					{
+						CFTPClient _FTPClient([](const string& logMsg) {cout << logMsg << endl; });
+						_FTPClient.InitSession(info.ip, info.port, info.username, info.password);
+						if (FTPClientThread::bFTPThreadLog)
+						{
+							cout << "upload begin:" << e.fullpath << " to " << e.remotepath << endl;
+						}
+						_FTPClient.UploadFile(e.fullpath, e.remotepath, true);
+						if (FTPClientThread::bFTPThreadLog)
+						{
+							cout << "upload end:" << e.fullpath << " to " << e.remotepath << endl;
+						}
+						_FTPClient.CleanupSession();
+					}, ftpInfo, elem);
+					this_thread::sleep_for(chrono::seconds(DEFAULT_SLEEP_SECOND));
 				}
 			}
-			
 		}
 
 		this_thread::sleep_for(chrono::seconds(DEFAULT_SLEEP_SECOND));
 	}
+
+	FTPClient.CleanupSession();
 
 	return;
 }
@@ -189,6 +328,16 @@ void FTPClientThread::InitLocalFileInfo(const string & InPath, const string& InR
 	_findclose(hFile);
 
 	return;
+}
+
+const CFileUploaderRunnable * FTPClientThread::GetIdleUploader()
+{
+	for (size_t i = 0; i < uploaderThreads.size(); ++i)
+	{
+		if (!uploaderThreads[i]->bRun)
+			return uploaderThreads[i];
+	}
+	return nullptr;
 }
 
 void FTPClientThread::Stop()

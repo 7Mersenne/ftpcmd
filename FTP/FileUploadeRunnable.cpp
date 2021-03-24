@@ -3,15 +3,30 @@
 #include "FTPClient.h"
 using namespace embeddedmz;
 
+CFileUploaderRunnable::CFileUploaderRunnable()
+{
+	bRun = false;
+}
+
 CFileUploaderRunnable::CFileUploaderRunnable(const FFTPInfo & InFTPInfo, const FFTPSyncFileInfo & InSyncFileInfo)
 	: ftpInfo(InFTPInfo)
 	, syncFileInfo(InSyncFileInfo)
 {
-	bRun = true;
+	bRun = false;
 }
 
 CFileUploaderRunnable::~CFileUploaderRunnable()
 {
+	bRun = false;
+}
+
+void CFileUploaderRunnable::Setting(const FFTPInfo & InFTPInfo, const FFTPSyncFileInfo & InSyncFileInfo)
+{
+	if (!bRun)
+	{
+		ftpInfo = InFTPInfo;
+		syncFileInfo = InSyncFileInfo;
+	}
 }
 
 uint32_t CFileUploaderRunnable::Run()
@@ -29,19 +44,38 @@ uint32_t CFileUploaderRunnable::Run()
 		{
 			// upload
 			bool bSuccessUploaded = FTPClient.UploadFile(syncFileInfo.fullpath, syncFileInfo.remotepath, true);
+			
 			if (!bSuccessUploaded)
 			{
 				break;
 			}
 			else {
-				return 2;
+				bRun = false;
+				return 2u;
 			}
 		}
 		else {
-			return 1;
+			bRun = false;
+			return 1u;
 		}
+
+		FTPClient.CleanupSession();
 
 		break;
 	}
+
+	bRun = false;
 	return 0;
+}
+
+future<uint32_t> CFileUploaderRunnable::Start()
+{
+	bRun = true;
+	return async(std::bind(&CFileUploaderRunnable::Run, this));
+}
+
+void CFileUploaderRunnable::Stop()
+{
+	bRun = false;
+
 }

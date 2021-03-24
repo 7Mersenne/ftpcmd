@@ -9,6 +9,7 @@
 #include <vector>
 #include <map>
 #include "FileUtil.h"
+#include "FileUploadeRunnable.h"
 using namespace std;
 
 class FTPClientThread
@@ -29,6 +30,7 @@ public:
 private:
 	bool RunThread();
 	void Run();
+	void RunWithAsyncLambda();
 	void Dir(const string& InPath, bool bLog = true);
 	void InitLocalFileInfo(const string& InPath, const string& InRemotePath);
 
@@ -36,13 +38,17 @@ private:
 	thread* ptr_thread;
 	FFTPInfo ftpInfo;
 	bool bOverwriteFile;
+	size_t m_MaxUploaderCnt;
 
-
+	int32_t concurrentCount;
 
 	std::mutex m_mutexFileCards;
 	map<string, size_t> m_syncFileMap;	// map fullpath to the index of m_ftpSyncList
 	vector< FFTPSyncFileInfo > m_ftpSyncList;
-	vector< future<uint32_t> > m_taskStateFutureList;
+	//vector< future<uint32_t> > m_taskStateFutureList;
+	vector<CFileUploaderRunnable*>  uploaderThreads;
+
+	const CFileUploaderRunnable* GetIdleUploader();
 
 	static bool bFTPThreadLog;
 };
