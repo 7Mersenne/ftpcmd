@@ -91,6 +91,8 @@ int main()
 
 	FTPClientThread* ct = ftp_testcase_2();
 
+	// ct cannot delete here. hold by another thread;
+
 
 	system("pause");
 }

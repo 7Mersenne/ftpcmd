@@ -18,11 +18,21 @@ using namespace std;
 class CFileUploaderRunnable
 {
 public:
+	CFileUploaderRunnable();
 	CFileUploaderRunnable(const FFTPInfo& InFTPInfo, const FFTPSyncFileInfo& InSyncFileInfo);
 	~CFileUploaderRunnable();
 
+	void Setting(const FFTPInfo& InFTPInfo, const FFTPSyncFileInfo& InSyncFileInfo);
+
+	future<uint32_t> Start();
+
+	void Stop();
+
+	atomic_bool bRun;
+
+private: 
 	/*
-	* async usage example: 
+	* async usage example:
 	```
 	CFileUploaderRunnable uploader_obj(ftpInfo, syncFileInfo);
 	future<uint32_t> _future = async(std::bind(&CFileUploaderRunnable::Run, uploader_obj));
@@ -34,10 +44,8 @@ public:
 	*	2	:	upload runtime failed
 	*/
 	uint32_t Run();
-
 	
 private:
-	atomic_bool bRun;
 	FFTPInfo ftpInfo;
 	FFTPSyncFileInfo syncFileInfo;
 };

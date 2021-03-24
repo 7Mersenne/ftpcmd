@@ -8,8 +8,8 @@ Quick Build: Unzip bin.zip and move the *.dll and *.lib to ftpcmd/ftpcmd/
 # 压力测试
 
 * [x] 中文文件名   
-* [ ] 大规模文件上传
-* [ ] 文件重命名
+* [x] 大规模文件上传
+* [x] 文件重命名
 * [ ] 数据库接口
 
 # FTPClient扩展功能

@@ -85,7 +85,7 @@ FFTPSyncFileInfo::FFTPSyncFileInfo()
 	, fullpath("C:\\SyncFTPDir")
 	, remotepath("/SyncFTP")
 	, filesize(0)
-	, uploadid(0)
+	, uploadid(-1)
 	, stat(0)
 {
 }
